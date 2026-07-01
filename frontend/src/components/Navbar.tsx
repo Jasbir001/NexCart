@@ -19,7 +19,8 @@ import {
   FiGift,
   FiSettings,
   FiLogOut,
-  FiInfo
+  FiInfo,
+  FiShield
 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
@@ -28,7 +29,7 @@ export default function Navbar() {
   const router = useRouter();
   
   // 1. Get global cart and wishlist items from the Store Context
-  const { cart, wishlist, setCartOpen, userProfile, logoutUser, isLoggedIn } = useStore();
+  const { cart, wishlist, setCartOpen, userProfile, logoutUser, isLoggedIn, isAdmin } = useStore();
   
   // 2. React states for menus
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -283,6 +284,17 @@ export default function Navbar() {
                       <span>Settings</span>
                     </Link>
 
+                    {isAdmin && (
+                      <Link 
+                        href="/admin" 
+                        onClick={() => setIsProfileDropdownOpen(false)}
+                        className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-primary hover:bg-primary/10 transition-colors cursor-pointer"
+                      >
+                        <FiShield className="text-sm" />
+                        <span>Admin Dashboard</span>
+                      </Link>
+                    )}
+
                     <button 
                       onClick={() => {
                         logoutUser();
@@ -389,6 +401,11 @@ export default function Navbar() {
                   <Link href="/account?tab=settings" onClick={() => setIsMobileMenuOpen(false)} className="block rounded-lg bg-background px-3 py-2 hover:text-primary transition-colors text-center cursor-pointer col-span-2">
                     Settings
                   </Link>
+                  {isAdmin && (
+                    <Link href="/admin" onClick={() => setIsMobileMenuOpen(false)} className="block rounded-lg bg-primary/10 text-primary px-3 py-2 hover:bg-primary hover:text-white transition-colors text-center cursor-pointer col-span-2 font-bold">
+                      ⚙️ Admin Dashboard
+                    </Link>
+                  )}
                 </div>
                 <div className="border-t border-border/60 pt-2 flex items-center justify-between">
                   <div className="flex items-center gap-2">

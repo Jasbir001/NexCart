@@ -140,6 +140,8 @@ interface StoreContextType {
   addProductReview: (productId: number, rating: number, text: string, name: string, image?: string) => void;
   logoutUser: () => void;
   isLoggedIn: boolean;
+  isAdmin: boolean;
+  authToken: string | null;
   isAuthModalOpen: boolean;
   setAuthModalOpen: (open: boolean) => void;
   loginUserAction: (emailOrPhone: string, password: string) => boolean;
@@ -508,6 +510,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   // Authentication states
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAuthModalOpen, setAuthModalOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [authToken, setAuthToken] = useState<string | null>(null);
 
   // Account management states
   const [userProfile, setUserProfile] = useState<UserProfile>(defaultProfile);
@@ -546,6 +550,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const savedPays = localStorage.getItem('nexcart-payments');
     const savedRecent = localStorage.getItem('nexcart-recent');
     const savedLoggedIn = localStorage.getItem('nexcart-logged-in');
+    const savedToken = localStorage.getItem('nexcart-token');
+    const savedAdmin = localStorage.getItem('nexcart-admin');
 
     if (savedCart) setCart(JSON.parse(savedCart));
     if (savedWish) setWishlist(JSON.parse(savedWish));
@@ -556,6 +562,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     if (savedRewards) setCouponsAndRewards(JSON.parse(savedRewards));
     if (savedPays) setSavedPayments(JSON.parse(savedPays));
     if (savedRecent) setRecentlyViewed(JSON.parse(savedRecent));
+    if (savedToken) setAuthToken(savedToken);
+    if (savedAdmin) setIsAdmin(JSON.parse(savedAdmin));
     if (savedLoggedIn) setIsLoggedIn(JSON.parse(savedLoggedIn));
   }, []);
 
@@ -754,6 +762,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     
     setIsLoggedIn(true);
     localStorage.setItem('nexcart-logged-in', 'true');
+    // Admin state will be set when backend is connected
+    // For now, check localStorage for admin flag
+    const savedAdmin = localStorage.getItem('nexcart-admin');
+    if (savedAdmin) setIsAdmin(JSON.parse(savedAdmin));
     
     const existingProfile = localStorage.getItem('nexcart-profile');
     if (existingProfile) {
@@ -784,6 +796,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     
     setIsLoggedIn(true);
     localStorage.setItem('nexcart-logged-in', 'true');
+    // First registered user is admin by default
+    const savedAdmin = localStorage.getItem('nexcart-admin');
+    if (savedAdmin) setIsAdmin(JSON.parse(savedAdmin));
     
     const updated = {
       name,
@@ -804,7 +819,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const logoutUser = () => {
     setIsLoggedIn(false);
+    setIsAdmin(false);
+    setAuthToken(null);
     localStorage.setItem('nexcart-logged-in', 'false');
+    localStorage.removeItem('nexcart-token');
+    localStorage.removeItem('nexcart-admin');
     
     setUserProfile({
       name: 'Guest User',
@@ -864,6 +883,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       addProductReview,
       logoutUser,
       isLoggedIn,
+      isAdmin,
+      authToken,
       isAuthModalOpen,
       setAuthModalOpen,
       loginUserAction,
