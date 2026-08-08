@@ -165,7 +165,9 @@ function AuthContent() {
           {/* Form Content */}
           {activeTab === 'login' ? (
             /* LOGIN FORM */
-            <form onSubmit={handleLoginSubmit} className="space-y-4">
+            <form onSubmit={handleLoginSubmit} className="space-y-4" autoComplete="off">
+              <input type="text" name="fakeusernameremembered" autoComplete="username" className="hidden" />
+              <input type="password" name="fakepasswordremembered" autoComplete="current-password" className="hidden" />
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
                   Email or Mobile Number
@@ -176,6 +178,8 @@ function AuthContent() {
                   </span>
                   <input
                     type="text"
+                    name="emailOrPhone"
+                    autoComplete="username"
                     required
                     placeholder="Enter email or 10-digit mobile"
                     value={loginEmailOrPhone}
