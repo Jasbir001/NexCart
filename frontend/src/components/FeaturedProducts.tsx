@@ -113,22 +113,24 @@ export default function FeaturedProducts() {
                   className="group relative rounded-2xl border border-border bg-card p-3 shadow-xs hover:shadow-md transition-all duration-300 flex flex-col justify-between"
                 >
                   {/* Product Image Link Box */}
-                  <Link href={`/products/${product.id}`} className="relative aspect-square overflow-hidden rounded-xl bg-background block cursor-pointer">
-                    <img 
-                      src={product.images[0]} 
-                      alt={product.name} 
-                      loading="lazy"
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-103"
-                    />
+                  <div className="relative">
+                    <Link href={`/products/${product.id}`} className="relative aspect-square overflow-hidden rounded-xl bg-background block cursor-pointer">
+                      <img 
+                        src={product.images[0]} 
+                        alt={product.name} 
+                        loading="lazy"
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-103"
+                      />
 
-                    {/* Left Tag Badge */}
-                    {product.badge && (
-                      <span className={`absolute top-2.5 left-2.5 rounded px-2 py-0.5 text-[9px] font-bold text-white uppercase tracking-wider ${
-                        isOutOfStock ? 'bg-zinc-500' : 'bg-primary'
-                      }`}>
-                        {isOutOfStock ? 'Out of Stock' : product.badge}
-                      </span>
-                    )}
+                      {/* Left Tag Badge */}
+                      {product.badge && (
+                        <span className={`absolute top-2.5 left-2.5 rounded px-2 py-0.5 text-[9px] font-bold text-white uppercase tracking-wider ${
+                          isOutOfStock ? 'bg-zinc-500' : 'bg-primary'
+                        }`}>
+                          {isOutOfStock ? 'Out of Stock' : product.badge}
+                        </span>
+                      )}
+                    </Link>
 
                     {/* Wishlist Icon Button Overlay */}
                     <button 
@@ -141,7 +143,7 @@ export default function FeaturedProducts() {
                     >
                       <FiHeart className={`text-xs ${isFavorite ? 'fill-current' : ''}`} />
                     </button>
-                  </Link>
+                  </div>
 
                   {/* Product Details Info */}
                   <div className="pt-3 flex flex-col justify-between flex-1">
