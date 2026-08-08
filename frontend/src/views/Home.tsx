@@ -1,10 +1,13 @@
 'use client';
 
 import React, { lazy, Suspense } from 'react';
+import dynamic from 'next/dynamic';
 import Hero from '../components/Hero';
 import Categories from '../components/Categories';
-import FeaturedProducts from '../components/FeaturedProducts';
-import BestSellers from '../components/BestSellers';
+
+// Load heavy interactive lists only on client to avoid SSR/client hydration mismatches
+const FeaturedProducts = dynamic(() => import('../components/FeaturedProducts'), { ssr: false });
+const BestSellers = dynamic(() => import('../components/BestSellers'), { ssr: false });
 
 const PromoBanner = lazy(() => import('../components/PromoBanner'));
 const WhyChooseUs = lazy(() => import('../components/WhyChooseUs'));
