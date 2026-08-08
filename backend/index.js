@@ -3,12 +3,34 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
 const connectDB = require('./config/db');
-
+const User = require('./models/User');
 // Load environment variables
 dotenv.config();
 
 // Connect to Database
 connectDB();
+
+// Ensure permanent admin exists
+const ensureAdminExists = async () => {
+  try {
+    const adminEmail = 'admin@nexcart.com';
+    const adminExists = await User.findOne({ email: adminEmail });
+    
+    if (!adminExists) {
+      await User.create({
+        name: 'Super Admin',
+        email: adminEmail,
+        phone: '0000000000', // Dummy phone
+        password: 'admin123',
+        isAdmin: true
+      });
+      console.log('Permanent Admin account created: admin@nexcart.com / admin123');
+    }
+  } catch (error) {
+    console.error('Error creating permanent admin:', error);
+  }
+};
+ensureAdminExists();
 
 const app = express();
 
@@ -29,6 +51,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/products', require('./routes/products'));
 app.use('/api/upload', require('./routes/upload'));
+app.use('/api/email', require('./routes/email'));
 
 // Basic health check route
 app.get('/api/health', (req, res) => {

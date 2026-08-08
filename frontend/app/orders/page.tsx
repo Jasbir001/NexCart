@@ -11,7 +11,8 @@ import {
   FiMapPin, 
   FiCheckCircle, 
   FiArrowLeft,
-  FiShoppingBag
+  FiShoppingBag,
+  FiXCircle
 } from 'react-icons/fi';
 
 export default function OrdersPage() {
@@ -42,65 +43,8 @@ export default function OrdersPage() {
     return trackingSteps.findIndex(s => s.key === status);
   };
 
-  // 2. Default mock order to display if user has placed zero orders yet
-  // This guarantees they immediately see a gorgeous timeline and stats!
-  const demoOrders: Order[] = [
-    {
-      id: 'OD827415',
-      date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 2 days ago
-      items: [
-        {
-          product: {
-            id: 1,
-            name: 'boAt Nirvana Ion ANC Wireless Earbuds',
-            price: 2999,
-            rating: 4.8,
-            reviewsCount: 142,
-            category: 'Electronics',
-            images: ['https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&auto=format&fit=crop&q=80'],
-            description: '',
-            stock: 10,
-            specs: {},
-            reviews: []
-          },
-          quantity: 1
-        },
-        {
-          product: {
-            id: 3,
-            name: 'Red Tape Classic Sporty Sneakers',
-            price: 1899,
-            rating: 4.7,
-            reviewsCount: 210,
-            category: 'Shoes',
-            images: ['https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500&auto=format&fit=crop&q=80'],
-            description: '',
-            stock: 12,
-            specs: {},
-            reviews: []
-          },
-          quantity: 1
-        }
-      ],
-      subtotal: 4898,
-      gst: 882, // 18% GST
-      deliveryCharge: 0,
-      grandTotal: 5780,
-      address: {
-        fullName: 'Rahul Sharma',
-        phone: '+91 9876543210',
-        addressLine: 'H-12, Sector 62',
-        city: 'Gurugram',
-        state: 'Haryana',
-        pinCode: '122001'
-      },
-      paymentMethod: 'UPI (PhonePe)',
-      status: 'Shipped' // In transit status!
-    }
-  ];
-
-  // Merge placed orders and demo orders
-  const allOrders = orders.length > 0 ? orders : demoOrders;
+  // Customer Orders list directly from StoreContext state
+  const allOrders = orders;
 
   return (
     <div className="min-h-screen bg-background text-text py-12 transition-colors duration-200">
@@ -119,7 +63,22 @@ export default function OrdersPage() {
 
         {/* Orders Stack */}
         <div className="space-y-10">
-          {allOrders.map((order) => {
+          {allOrders.length === 0 ? (
+            <div className="rounded-3xl border border-border bg-card p-12 text-center max-w-lg mx-auto space-y-5">
+              <div className="inline-flex rounded-full bg-background p-5 text-zinc-400">
+                <FiPackage className="text-4xl" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="font-bold text-base text-text">No orders placed yet</h3>
+                <p className="text-xs text-zinc-400">When you place an order, your live tracking details and status updates will appear here.</p>
+              </div>
+              <Link href="/" className="inline-block rounded-full bg-primary px-6 py-2.5 text-xs font-bold text-white shadow-md hover:bg-primary/90 transition-all">
+                Browse Products
+              </Link>
+            </div>
+          ) : (
+            allOrders.map((order) => {
+            const isCancelled = order.status === 'Cancelled';
             const currentStatusIndex = getStatusIndex(order.status);
 
             return (
@@ -190,63 +149,72 @@ export default function OrdersPage() {
 
                 </div>
 
-                {/* 3. Live tracking timeline bar */}
+                {/* 3. Live tracking timeline bar or Cancelled Banner */}
                 <div className="p-6 bg-card">
-                  <div className="flex items-center gap-2 mb-6 border-b border-border/50 pb-3">
-                    <FiClock className="text-primary text-base animate-pulse" />
-                    <span className="font-bold text-xs uppercase tracking-widest text-zinc-400">Live Status:</span>
-                    <span className="rounded bg-primary/10 px-2.5 py-0.5 text-xs text-primary font-bold">{order.status}</span>
-                  </div>
-
-                  {/* Timeline grid timeline tracker */}
-                  <div className="relative">
-                    {/* Horizontal connector line */}
-                    <div className="absolute top-4 left-6 right-6 h-1 bg-border -z-0 hidden md:block" />
-                    <div 
-                      className="absolute top-4 left-6 h-1 bg-primary -z-0 hidden md:block transition-all duration-500" 
-                      style={{ 
-                        width: `${(currentStatusIndex / (trackingSteps.length - 1)) * 100}%` 
-                      }} 
-                    />
-
-                    {/* Timeline steps grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-6 gap-6 relative z-10">
-                      {trackingSteps.map((step, idx) => {
-                        const isCompleted = idx <= currentStatusIndex;
-                        const isCurrent = idx === currentStatusIndex;
-                        const StepIcon = step.icon;
-
-                        return (
-                          <div key={step.key} className="flex md:flex-col items-center gap-3 md:gap-0 md:text-center group">
-                            
-                            {/* Bullet Circle */}
-                            <div 
-                              className={`h-9 w-9 rounded-full flex items-center justify-center border-2 shadow-xs transition-all duration-300 md:mb-3 flex-shrink-0 relative ${
-                                isCompleted 
-                                  ? 'bg-primary border-primary text-white' 
-                                  : 'bg-card border-border text-zinc-400'
-                              } ${isCurrent ? 'ring-4 ring-primary/20 scale-105 animate-pulse' : ''}`}
-                            >
-                              <StepIcon className="text-base" />
-                            </div>
-
-                            {/* Details text */}
-                            <div className="text-left md:text-center space-y-0.5">
-                              <p className={`text-xs font-extrabold transition-colors ${
-                                isCompleted ? 'text-text' : 'text-zinc-400'
-                              }`}>
-                                {step.label}
-                              </p>
-                              <p className="text-[10px] text-zinc-400 font-semibold leading-normal md:max-w-[110px] md:mx-auto">
-                                {step.desc}
-                              </p>
-                            </div>
-
-                          </div>
-                        );
-                      })}
+                  {isCancelled ? (
+                    <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-5 flex items-center gap-4 text-red-500">
+                      <FiXCircle className="text-3xl flex-shrink-0" />
+                      <div>
+                        <h4 className="font-extrabold text-sm text-red-500">Order Cancelled</h4>
+                        <p className="text-xs text-red-400 font-semibold mt-0.5">
+                          This order was cancelled by administrator. Any payment charged will be refunded into your original payment source within 2-3 business days.
+                        </p>
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-2 mb-6 border-b border-border/50 pb-3">
+                        <FiClock className="text-primary text-base animate-pulse" />
+                        <span className="font-bold text-xs uppercase tracking-widest text-zinc-400">Live Status:</span>
+                        <span className="rounded bg-primary/10 px-2.5 py-0.5 text-xs text-primary font-bold">{order.status}</span>
+                      </div>
+
+                      {/* Timeline grid timeline tracker */}
+                      <div className="relative">
+                        <div className="absolute top-4 left-6 right-6 h-1 bg-border -z-0 hidden md:block" />
+                        <div 
+                          className="absolute top-4 left-6 h-1 bg-primary -z-0 hidden md:block transition-all duration-500" 
+                          style={{ 
+                            width: `${(Math.max(0, currentStatusIndex) / (trackingSteps.length - 1)) * 100}%` 
+                          }} 
+                        />
+
+                        <div className="grid grid-cols-1 md:grid-cols-6 gap-6 relative z-10">
+                          {trackingSteps.map((step, idx) => {
+                            const isCompleted = idx <= currentStatusIndex;
+                            const isCurrent = idx === currentStatusIndex;
+                            const StepIcon = step.icon;
+
+                            return (
+                              <div key={step.key} className="flex md:flex-col items-center gap-3 md:gap-0 md:text-center group">
+                                <div 
+                                  className={`h-9 w-9 rounded-full flex items-center justify-center border-2 shadow-xs transition-all duration-300 md:mb-3 flex-shrink-0 relative ${
+                                    isCompleted 
+                                      ? 'bg-primary border-primary text-white' 
+                                      : 'bg-card border-border text-zinc-400'
+                                  } ${isCurrent ? 'ring-4 ring-primary/20 scale-105 animate-pulse' : ''}`}
+                                >
+                                  <StepIcon className="text-base" />
+                                </div>
+
+                                <div className="text-left md:text-center space-y-0.5">
+                                  <p className={`text-xs font-extrabold transition-colors ${
+                                    isCompleted ? 'text-text' : 'text-zinc-400'
+                                  }`}>
+                                    {step.label}
+                                  </p>
+                                  <p className="text-[10px] text-zinc-400 font-semibold leading-normal md:max-w-[110px] md:mx-auto">
+                                    {step.desc}
+                                  </p>
+                                </div>
+
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </>
+                  )}
 
                 </div>
 

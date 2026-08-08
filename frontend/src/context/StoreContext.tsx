@@ -52,7 +52,19 @@ export interface Order {
   grandTotal: number;
   address: OrderAddress;
   paymentMethod: string;
-  status: 'Pending' | 'Confirmed' | 'Packed' | 'Shipped' | 'Out For Delivery' | 'Delivered';
+  status: 'Pending' | 'Confirmed' | 'Packed' | 'Shipped' | 'Out For Delivery' | 'Delivered' | 'Cancelled';
+}
+
+export interface StoreOffer {
+  id: string;
+  title: string;
+  code: string;
+  discountType: 'percentage' | 'fixed';
+  discountValue: number;
+  minQuantity: number;
+  minOrderValue: number;
+  description: string;
+  isActive: boolean;
 }
 
 export interface UserProfile {
@@ -146,6 +158,16 @@ interface StoreContextType {
   setAuthModalOpen: (open: boolean) => void;
   loginUserAction: (emailOrPhone: string, password: string) => boolean;
   registerUserAction: (name: string, phone: string, email: string, password: string) => boolean;
+  
+  // Admin Features: Order status update, Product stock control, Manual Offer system
+  updateOrderStatus: (orderId: string, status: Order['status']) => void;
+  toggleProductStock: (productId: number, setStock?: number) => void;
+  manualOffers: StoreOffer[];
+  addOffer: (offer: Omit<StoreOffer, 'id'>) => void;
+  updateOffer: (id: string, offerData: Partial<StoreOffer>) => void;
+  deleteOffer: (id: string) => void;
+  toggleOfferActive: (id: string) => void;
+  getBestApplicableOffer: (cartItems: CartItem[], subtotal: number) => { offer: StoreOffer | null; discountAmount: number };
 }
 
 
@@ -498,6 +520,42 @@ const defaultPayments: SavedPayment[] = [
   { id: 'pay-2', type: 'card', label: 'HDFC Bank Credit Card', details: 'Visa ending in 4321' }
 ];
 
+const defaultManualOffers: StoreOffer[] = [
+  {
+    id: 'off-1',
+    title: '5+ Items Combo Special',
+    code: 'BUY5GET20',
+    discountType: 'percentage',
+    discountValue: 20,
+    minQuantity: 5,
+    minOrderValue: 0,
+    description: 'Buy 5 or more items together and get 20% instant discount on total cart!',
+    isActive: true
+  },
+  {
+    id: 'off-2',
+    title: 'Mega Savings ₹500 OFF',
+    code: 'SAVE500',
+    discountType: 'fixed',
+    discountValue: 500,
+    minQuantity: 1,
+    minOrderValue: 2999,
+    description: 'Get Flat ₹500 OFF on orders above ₹2,999!',
+    isActive: true
+  },
+  {
+    id: 'off-3',
+    title: 'Festival Delight 15% OFF',
+    code: 'FESTIVE15',
+    discountType: 'percentage',
+    discountValue: 15,
+    minQuantity: 2,
+    minOrderValue: 1500,
+    description: 'Get 15% OFF when purchasing at least 2 items worth ₹1,500+.',
+    isActive: true
+  }
+];
+
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [products, setProducts] = useState<Product[]>(indianProducts);
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -506,6 +564,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [isCartOpen, setCartOpen] = useState(false);
   const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
   const [couponDiscountPercent, setCouponDiscountPercent] = useState<number>(0);
+  const [manualOffers, setManualOffers] = useState<StoreOffer[]>(defaultManualOffers);
 
   // Authentication states
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -531,6 +590,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setCouponDiscountPercent(20);
       return true;
     }
+    // Check if code matches any active manual offer code
+    const matchingOffer = manualOffers.find(o => o.isActive && o.code.toUpperCase() === formattedCode);
+    if (matchingOffer) {
+      setAppliedCoupon(matchingOffer.code.toUpperCase());
+      setCouponDiscountPercent(matchingOffer.discountType === 'percentage' ? matchingOffer.discountValue : 0);
+      return true;
+    }
     return false;
   };
 
@@ -552,6 +618,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const savedLoggedIn = localStorage.getItem('nexcart-logged-in');
     const savedToken = localStorage.getItem('nexcart-token');
     const savedAdmin = localStorage.getItem('nexcart-admin');
+    const savedOffers = localStorage.getItem('nexcart-manual-offers');
 
     if (savedCart) setCart(JSON.parse(savedCart));
     if (savedWish) setWishlist(JSON.parse(savedWish));
@@ -565,6 +632,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     if (savedToken) setAuthToken(savedToken);
     if (savedAdmin) setIsAdmin(JSON.parse(savedAdmin));
     if (savedLoggedIn) setIsLoggedIn(JSON.parse(savedLoggedIn));
+    if (savedOffers) setManualOffers(JSON.parse(savedOffers));
   }, []);
 
   const saveCartToStorage = (newCart: CartItem[]) => {
@@ -653,6 +721,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     saveOrdersToStorage(updatedOrders);
     clearCart();
     removeCoupon();
+
+    // Trigger Order Placed Nodemailer Notification Email
+    triggerNotificationEmail('placed', newOrder, userProfile.email || 'customer@example.com');
+
     return newOrder;
   };
 
@@ -762,23 +834,23 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     
     setIsLoggedIn(true);
     localStorage.setItem('nexcart-logged-in', 'true');
-    // Admin state will be set when backend is connected
-    // For now, check localStorage for admin flag
-    const savedAdmin = localStorage.getItem('nexcart-admin');
-    if (savedAdmin) setIsAdmin(JSON.parse(savedAdmin));
+    // For local demo, if email is admin@nexcart.com, make them admin
+    const isAdminUser = emailOrPhone === 'admin@nexcart.com';
+    setIsAdmin(isAdminUser);
+    localStorage.setItem('nexcart-admin', JSON.stringify(isAdminUser));
     
     const existingProfile = localStorage.getItem('nexcart-profile');
     if (existingProfile) {
       setUserProfile(JSON.parse(existingProfile));
     } else {
       const parts = emailOrPhone.split('@');
-      const mockName = parts[0] ? parts[0].charAt(0).toUpperCase() + parts[0].slice(1) : 'Jasbir Singh';
+      const mockName = parts[0] ? parts[0].charAt(0).toUpperCase() + parts[0].slice(1) : 'Admin User';
       const updated = {
         name: mockName,
-        email: emailOrPhone.includes('@') ? emailOrPhone : 'jasbir@example.com',
+        email: emailOrPhone.includes('@') ? emailOrPhone : 'admin@nexcart.com',
         phone: !emailOrPhone.includes('@') ? emailOrPhone : '+91 9876543210',
         photo: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-        memberSince: 'June 2026'
+        memberSince: 'Just now'
       };
       setUserProfile(updated);
       localStorage.setItem('nexcart-profile', JSON.stringify(updated));
@@ -791,21 +863,51 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return true;
   };
 
+  // Email Notification Helper Triggers (Nodemailer API)
+  const triggerNotificationEmail = async (event: string, order: Order, recipientEmail?: string) => {
+    try {
+      await fetch('http://localhost:5000/api/email/order-event', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          event,
+          order,
+          recipientEmail: recipientEmail || userProfile.email || 'customer@nexcart.com'
+        })
+      });
+    } catch (err) {
+      console.warn('Nodemailer API trigger note:', err);
+    }
+  };
+
+  const triggerWelcomeEmail = async (name: string, email: string) => {
+    try {
+      await fetch('http://localhost:5000/api/email/welcome', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email })
+      });
+    } catch (err) {
+      console.warn('Welcome Email API trigger note:', err);
+    }
+  };
+
   const registerUserAction = (name: string, phone: string, email: string, password: string): boolean => {
     if (!name || !phone || !email || !password) return false;
     
     setIsLoggedIn(true);
     localStorage.setItem('nexcart-logged-in', 'true');
-    // First registered user is admin by default
-    const savedAdmin = localStorage.getItem('nexcart-admin');
-    if (savedAdmin) setIsAdmin(JSON.parse(savedAdmin));
+    
+    const isAdminUser = email === 'admin@nexcart.com';
+    setIsAdmin(isAdminUser);
+    localStorage.setItem('nexcart-admin', JSON.stringify(isAdminUser));
     
     const updated = {
       name,
       email,
       phone: phone.startsWith('+91') ? phone : '+91 ' + phone,
       photo: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
-      memberSince: 'June 2026'
+      memberSince: 'Just now'
     };
     setUserProfile(updated);
     localStorage.setItem('nexcart-profile', JSON.stringify(updated));
@@ -814,6 +916,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setSavedPayments(defaultPayments);
     setCouponsAndRewards(defaultCouponsAndRewards);
     
+    // Trigger Welcome Email Notification
+    triggerWelcomeEmail(name, email);
+
     return true;
   };
 
@@ -846,6 +951,88 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem('nexcart-payments');
     localStorage.removeItem('nexcart-rewards');
     localStorage.removeItem('nexcart-cart');
+  };
+
+  // -------------------------------------------------------------
+  // Admin Features: Order status update, Product stock control, Manual Offer System
+  // -------------------------------------------------------------
+  
+  const saveOffersToStorage = (newOffers: StoreOffer[]) => {
+    setManualOffers(newOffers);
+    localStorage.setItem('nexcart-manual-offers', JSON.stringify(newOffers));
+  };
+
+  const updateOrderStatus = (orderId: string, newStatus: Order['status']) => {
+    const updatedOrders = orders.map(o => o.id === orderId ? { ...o, status: newStatus } : o);
+    saveOrdersToStorage(updatedOrders);
+
+    // Find updated order object and trigger status email notification
+    const targetOrder = updatedOrders.find(o => o.id === orderId);
+    if (targetOrder) {
+      triggerNotificationEmail(newStatus, targetOrder, userProfile.email || 'customer@nexcart.com');
+    }
+  };
+
+  const toggleProductStock = (productId: number, setStock?: number) => {
+    const updatedProducts = products.map(p => {
+      if (p.id === productId) {
+        const newStock = setStock !== undefined ? setStock : (p.stock > 0 ? 0 : 10);
+        return { ...p, stock: newStock };
+      }
+      return p;
+    });
+    setProducts(updatedProducts);
+    localStorage.setItem('nexcart-products', JSON.stringify(updatedProducts));
+  };
+
+  const addOffer = (offerData: Omit<StoreOffer, 'id'>) => {
+    const newOffer: StoreOffer = {
+      ...offerData,
+      id: 'off-' + Date.now()
+    };
+    const updated = [newOffer, ...manualOffers];
+    saveOffersToStorage(updated);
+  };
+
+  const updateOffer = (id: string, offerData: Partial<StoreOffer>) => {
+    const updated = manualOffers.map(o => o.id === id ? { ...o, ...offerData } : o);
+    saveOffersToStorage(updated);
+  };
+
+  const deleteOffer = (id: string) => {
+    const updated = manualOffers.filter(o => o.id !== id);
+    saveOffersToStorage(updated);
+  };
+
+  const toggleOfferActive = (id: string) => {
+    const updated = manualOffers.map(o => o.id === id ? { ...o, isActive: !o.isActive } : o);
+    saveOffersToStorage(updated);
+  };
+
+  const getBestApplicableOffer = (cartItems: CartItem[], subtotal: number) => {
+    const totalQty = cartItems.reduce((acc, item) => acc + item.quantity, 0);
+    const activeOffers = manualOffers.filter(o => o.isActive);
+
+    let bestOffer: StoreOffer | null = null;
+    let maxDiscount = 0;
+
+    for (const offer of activeOffers) {
+      if (totalQty >= offer.minQuantity && subtotal >= offer.minOrderValue) {
+        let discount = 0;
+        if (offer.discountType === 'percentage') {
+          discount = Math.round((subtotal * offer.discountValue) / 100);
+        } else {
+          discount = offer.discountValue;
+        }
+
+        if (discount > maxDiscount) {
+          maxDiscount = discount;
+          bestOffer = offer;
+        }
+      }
+    }
+
+    return { offer: bestOffer, discountAmount: maxDiscount };
   };
 
   return (
@@ -888,7 +1075,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       isAuthModalOpen,
       setAuthModalOpen,
       loginUserAction,
-      registerUserAction
+      registerUserAction,
+      updateOrderStatus,
+      toggleProductStock,
+      manualOffers,
+      addOffer,
+      updateOffer,
+      deleteOffer,
+      toggleOfferActive,
+      getBestApplicableOffer
     }}>
       {children}
     </StoreContext.Provider>
