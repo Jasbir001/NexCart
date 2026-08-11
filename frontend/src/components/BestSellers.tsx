@@ -1,17 +1,14 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useStore } from '../context/StoreContext';
+import React from 'react';
+import { useStore, Product } from '../context/StoreContext';
+import { useIsClient } from '../hooks/useIsClient';
 import Link from 'next/link';
 import { FiStar, FiShoppingCart, FiHeart } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
 export default function BestSellers() {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useIsClient();
 
   // 1. Get products, cart, wishlist helpers from context
   const { products, cart, addToCart, updateCartQty, toggleWishlist, isInWishlist, isLoggedIn, setAuthModalOpen } = useStore();
@@ -19,7 +16,7 @@ export default function BestSellers() {
   // Slice the first 4 items from our global products array to represent "Best Sellers"
   const bestSellerProducts = products.slice(0, 4);
 
-  const handleAddToCart = (e: React.MouseEvent, product: any) => {
+  const handleAddToCart = (e: React.MouseEvent, product: Product) => {
     e.preventDefault(); // Prevent navigating to details page
     if (!isLoggedIn) {
       setAuthModalOpen(true);
@@ -29,7 +26,7 @@ export default function BestSellers() {
     toast.success(`${product.name} added to cart!`, { icon: '🛒' });
   };
 
-  const handleToggleWishlist = (e: React.MouseEvent, product: any) => {
+  const handleToggleWishlist = (e: React.MouseEvent, product: Product) => {
     e.preventDefault();
     e.stopPropagation(); // Stop event bubbling to parent <Link>
     if (!isLoggedIn) {

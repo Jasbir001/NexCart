@@ -60,7 +60,7 @@ export default function Testimonials() {
 
               {/* Quote Text */}
               <p className="text-zinc-500 dark:text-zinc-400 font-medium text-sm sm:text-base leading-relaxed flex-1 mb-8 italic">
-                "{test.quote}"
+                &quot;{test.quote}&quot;
               </p>
 
               {/* User Bio */}

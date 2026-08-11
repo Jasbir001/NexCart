@@ -105,8 +105,8 @@ export default function Navbar() {
                 </div>
               )}
             </div>
-            <a href="/#featured" className="hover:text-primary transition-colors">Featured</a>
-            <a href="/#bestsellers" className="hover:text-primary transition-colors">Best Sellers</a>
+            <Link href="/#featured" className="hover:text-primary transition-colors">Featured</Link>
+            <Link href="/#bestsellers" className="hover:text-primary transition-colors">Best Sellers</Link>
           </div>
 
           {/* Search Bar Input Form (Desktop/Tablet only) */}

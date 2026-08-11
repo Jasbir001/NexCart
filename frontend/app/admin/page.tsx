@@ -42,6 +42,61 @@ interface SpecEntry {
   value: string;
 }
 
+const DEMO_ORDERS: Order[] = [
+  {
+    id: 'OD827415',
+    date: '2026-08-06',
+    items: [
+      {
+        product: {
+          id: 1,
+          name: 'boAt Nirvana Ion ANC Wireless Earbuds',
+          price: 2999,
+          rating: 4.8,
+          reviewsCount: 142,
+          category: 'Electronics',
+          images: ['https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&auto=format&fit=crop&q=80'],
+          description: '',
+          stock: 10,
+          specs: {},
+          reviews: []
+        },
+        quantity: 1
+      },
+      {
+        product: {
+          id: 3,
+          name: 'Red Tape Classic Sporty Sneakers',
+          price: 1899,
+          rating: 4.7,
+          reviewsCount: 210,
+          category: 'Shoes',
+          images: ['https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500&auto=format&fit=crop&q=80'],
+          description: '',
+          stock: 12,
+          specs: {},
+          reviews: []
+        },
+        quantity: 1
+      }
+    ],
+    subtotal: 4898,
+    gst: 882,
+    deliveryCharge: 0,
+    grandTotal: 5780,
+    address: {
+      fullName: 'Rahul Sharma',
+      phone: '+91 9876543210',
+      addressLine: 'H-12, Sector 62',
+      city: 'Gurugram',
+      state: 'Haryana',
+      pinCode: '122001'
+    },
+    paymentMethod: 'UPI (PhonePe)',
+    status: 'Shipped'
+  }
+];
+
 export default function AdminPage() {
   const router = useRouter();
   const {
@@ -193,63 +248,7 @@ export default function AdminPage() {
   // -------------------------------------------------------------
   const [orderStatusFilter, setOrderStatusFilter] = useState<string>('All');
 
-  // Demo fallback order if user has not placed orders yet
-  const demoOrders: Order[] = [
-    {
-      id: 'OD827415',
-      date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      items: [
-        {
-          product: {
-            id: 1,
-            name: 'boAt Nirvana Ion ANC Wireless Earbuds',
-            price: 2999,
-            rating: 4.8,
-            reviewsCount: 142,
-            category: 'Electronics',
-            images: ['https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&auto=format&fit=crop&q=80'],
-            description: '',
-            stock: 10,
-            specs: {},
-            reviews: []
-          },
-          quantity: 1
-        },
-        {
-          product: {
-            id: 3,
-            name: 'Red Tape Classic Sporty Sneakers',
-            price: 1899,
-            rating: 4.7,
-            reviewsCount: 210,
-            category: 'Shoes',
-            images: ['https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500&auto=format&fit=crop&q=80'],
-            description: '',
-            stock: 12,
-            specs: {},
-            reviews: []
-          },
-          quantity: 1
-        }
-      ],
-      subtotal: 4898,
-      gst: 882,
-      deliveryCharge: 0,
-      grandTotal: 5780,
-      address: {
-        fullName: 'Rahul Sharma',
-        phone: '+91 9876543210',
-        addressLine: 'H-12, Sector 62',
-        city: 'Gurugram',
-        state: 'Haryana',
-        pinCode: '122001'
-      },
-      paymentMethod: 'UPI (PhonePe)',
-      status: 'Shipped'
-    }
-  ];
-
-  const allOrdersList = orders.length > 0 ? orders : demoOrders;
+  const allOrdersList = orders.length > 0 ? orders : DEMO_ORDERS;
   const filteredOrders = orderStatusFilter === 'All'
     ? allOrdersList
     : allOrdersList.filter(o => o.status === orderStatusFilter);
@@ -693,7 +692,7 @@ export default function AdminPage() {
               {filteredOrders.length === 0 ? (
                 <div className="rounded-3xl border border-border bg-card p-12 text-center text-zinc-400 space-y-3">
                   <FiTruck className="text-4xl mx-auto text-zinc-500" />
-                  <p className="font-bold text-sm">No orders found matching "{orderStatusFilter}" status</p>
+                  <p className="font-bold text-sm">No orders found matching &quot;{orderStatusFilter}&quot; status</p>
                 </div>
               ) : (
                 filteredOrders.map((order) => {

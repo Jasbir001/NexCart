@@ -1,20 +1,16 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { useStore } from '../../../src/context/StoreContext';
+import React, { useState } from 'react';
+import { useParams } from 'next/navigation';
+import { useStore, Product } from '../../../src/context/StoreContext';
+import { useIsClient } from '../../../src/hooks/useIsClient';
 import Link from 'next/link';
 import { FiHeart, FiShoppingCart, FiStar, FiAlertCircle, FiArrowLeft } from 'react-icons/fi';
 import toast, { Toaster } from 'react-hot-toast';
 
 export default function CategoryPage() {
   const params = useParams();
-  const router = useRouter();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useIsClient();
 
   const categoryId = params.id ? String(params.id).toLowerCase() : '';
 
@@ -61,7 +57,7 @@ export default function CategoryPage() {
     ? baseProducts[0].category
     : categoryId.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' & ');
 
-  const handleAddToCart = (e: React.MouseEvent, product: any) => {
+  const handleAddToCart = (e: React.MouseEvent, product: Product) => {
     e.preventDefault();
     if (!isLoggedIn) {
       setAuthModalOpen(true);
@@ -71,7 +67,7 @@ export default function CategoryPage() {
     toast.success(`${product.name} added to cart!`, { icon: '🛒' });
   };
 
-  const handleToggleWishlist = (e: React.MouseEvent, product: any) => {
+  const handleToggleWishlist = (e: React.MouseEvent, product: Product) => {
     e.preventDefault();
     e.stopPropagation();
     if (!isLoggedIn) {
@@ -170,7 +166,7 @@ export default function CategoryPage() {
             <div className="space-y-1.5">
               <h3 className="font-bold text-lg">No Products Found</h3>
               <p className="text-sm text-zinc-400 max-w-xs mx-auto">
-                We couldn't find any premium gear under this category matching your filters.
+                We couldn&apos;t find any premium gear under this category matching your filters.
               </p>
             </div>
             <button

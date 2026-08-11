@@ -20,7 +20,7 @@ const ensureAdminExists = async () => {
       await User.create({
         name: 'Super Admin',
         email: adminEmail,
-        phone: '0000000000', // Dummy phone
+        phone: 'XXXXX-96995',
         password: 'admin123',
         isAdmin: true
       });

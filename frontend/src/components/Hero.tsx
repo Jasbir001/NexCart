@@ -29,7 +29,7 @@ export default function Hero() {
 
             {/* Subheading */}
             <p className="max-w-lg mx-auto lg:mx-0 text-sm sm:text-base text-zinc-500 dark:text-zinc-400 font-medium leading-relaxed">
-              Elevate your daily lifestyle with NexCart's curated collection of smart electronics, modern fashion, and premium accessories. Express delivery. Secure checkout.
+              Elevate your daily lifestyle with NexCart&apos;s curated collection of smart electronics, modern fashion, and premium accessories. Express delivery. Secure checkout.
             </p>
 
             {/* CTA Buttons */}

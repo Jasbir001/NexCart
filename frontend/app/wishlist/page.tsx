@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { useStore } from '../../src/context/StoreContext';
+import { useStore, Product } from '../../src/context/StoreContext';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { 
@@ -27,13 +27,13 @@ export default function WishlistPage() {
     }
   }, [isLoggedIn, router]);
 
-  const handleAddToCart = (product: any) => {
+  const handleAddToCart = (product: Product) => {
     addToCart(product);
     toggleWishlist(product); // Remove from wishlist (move to cart)
     toast.success(`${product.name} moved to cart!`, { icon: '🛒' });
   };
 
-  const handleRemoveItem = (product: any) => {
+  const handleRemoveItem = (product: Product) => {
     toggleWishlist(product);
     toast.success('Removed from Wishlist.');
   };

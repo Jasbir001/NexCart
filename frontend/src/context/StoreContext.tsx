@@ -75,6 +75,16 @@ export interface UserProfile {
   memberSince: string;
 }
 
+export interface RegisteredUser {
+  name: string;
+  email: string;
+  phone: string;
+  password: string;
+  photo: string;
+  memberSince: string;
+  isAdmin?: boolean;
+}
+
 export interface SavedAddress {
   id: string;
   fullName: string;
@@ -556,28 +566,75 @@ const defaultManualOffers: StoreOffer[] = [
   }
 ];
 
+const defaultRegisteredUsers: RegisteredUser[] = [
+  {
+    name: 'Admin User',
+    email: 'admin@nexcart.com',
+    phone: '+91 9876543210',
+    password: 'admin123',
+    photo: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+    memberSince: 'Just now',
+    isAdmin: true
+  }
+];
+
+function readLocalStorage<T>(key: string, fallback: T): T {
+  if (typeof window === 'undefined') return fallback;
+  try {
+    const saved = localStorage.getItem(key);
+    return saved ? JSON.parse(saved) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+const generateOrderId = () => `OD${Math.floor(100000 + Math.random() * 900000)}`;
+
 export function StoreProvider({ children }: { children: React.ReactNode }) {
-  const [products, setProducts] = useState<Product[]>(indianProducts);
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [wishlist, setWishlist] = useState<Product[]>([]);
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [products, setProducts] = useState<Product[]>(() => readLocalStorage('nexcart-products', indianProducts));
+  const [cart, setCart] = useState<CartItem[]>(() => readLocalStorage('nexcart-cart', []));
+  const [wishlist, setWishlist] = useState<Product[]>(() => readLocalStorage('nexcart-wishlist', []));
+  const [orders, setOrders] = useState<Order[]>(() => readLocalStorage('nexcart-orders', []));
   const [isCartOpen, setCartOpen] = useState(false);
   const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
   const [couponDiscountPercent, setCouponDiscountPercent] = useState<number>(0);
-  const [manualOffers, setManualOffers] = useState<StoreOffer[]>(defaultManualOffers);
+  const [manualOffers, setManualOffers] = useState<StoreOffer[]>(() => readLocalStorage('nexcart-manual-offers', defaultManualOffers));
 
   // Authentication states
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(() => readLocalStorage('nexcart-logged-in', false));
   const [isAuthModalOpen, setAuthModalOpen] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [authToken, setAuthToken] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(() => readLocalStorage('nexcart-admin', false));
+  const [authToken, setAuthToken] = useState<string | null>(() => readLocalStorage('nexcart-token', null));
 
   // Account management states
-  const [userProfile, setUserProfile] = useState<UserProfile>(defaultProfile);
-  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>(defaultAddresses);
-  const [couponsAndRewards, setCouponsAndRewards] = useState<CouponsAndRewards>(defaultCouponsAndRewards);
-  const [savedPayments, setSavedPayments] = useState<SavedPayment[]>(defaultPayments);
-  const [recentlyViewed, setRecentlyViewed] = useState<number[]>([]);
+  const [userProfile, setUserProfile] = useState<UserProfile>(() => readLocalStorage('nexcart-profile', defaultProfile));
+  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>(() => readLocalStorage('nexcart-addresses', defaultAddresses));
+  const [couponsAndRewards, setCouponsAndRewards] = useState<CouponsAndRewards>(() => readLocalStorage('nexcart-rewards', defaultCouponsAndRewards));
+  const [savedPayments, setSavedPayments] = useState<SavedPayment[]>(() => readLocalStorage('nexcart-payments', defaultPayments));
+  const [recentlyViewed, setRecentlyViewed] = useState<number[]>(() => readLocalStorage('nexcart-recent', []));
+  const [registeredUsers, setRegisteredUsers] = useState<RegisteredUser[]>(() => readLocalStorage('nexcart-users', defaultRegisteredUsers));
+
+  const saveRegisteredUsersToStorage = (users: RegisteredUser[]) => {
+    setRegisteredUsers(users);
+    localStorage.setItem('nexcart-users', JSON.stringify(users));
+  };
+
+  // Ensure default admin exists if users storage is empty (handles prior empty localStorage)
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('nexcart-users');
+      if (!stored) {
+        saveRegisteredUsersToStorage(defaultRegisteredUsers);
+      } else {
+        const parsed: RegisteredUser[] = JSON.parse(stored);
+        if (!Array.isArray(parsed) || parsed.length === 0) {
+          saveRegisteredUsersToStorage(defaultRegisteredUsers);
+        }
+      }
+    } catch (err) {
+      saveRegisteredUsersToStorage(defaultRegisteredUsers);
+    }
+  }, []);
 
   const applyCoupon = (code: string): boolean => {
     const formattedCode = code.toUpperCase().trim();
@@ -604,36 +661,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setAppliedCoupon(null);
     setCouponDiscountPercent(0);
   };
-
-  useEffect(() => {
-    const savedCart = localStorage.getItem('nexcart-cart');
-    const savedWish = localStorage.getItem('nexcart-wishlist');
-    const savedOrders = localStorage.getItem('nexcart-orders');
-    const savedProd = localStorage.getItem('nexcart-products');
-    const savedProf = localStorage.getItem('nexcart-profile');
-    const savedAddrs = localStorage.getItem('nexcart-addresses');
-    const savedRewards = localStorage.getItem('nexcart-rewards');
-    const savedPays = localStorage.getItem('nexcart-payments');
-    const savedRecent = localStorage.getItem('nexcart-recent');
-    const savedLoggedIn = localStorage.getItem('nexcart-logged-in');
-    const savedToken = localStorage.getItem('nexcart-token');
-    const savedAdmin = localStorage.getItem('nexcart-admin');
-    const savedOffers = localStorage.getItem('nexcart-manual-offers');
-
-    if (savedCart) setCart(JSON.parse(savedCart));
-    if (savedWish) setWishlist(JSON.parse(savedWish));
-    if (savedOrders) setOrders(JSON.parse(savedOrders));
-    if (savedProd) setProducts(JSON.parse(savedProd));
-    if (savedProf) setUserProfile(JSON.parse(savedProf));
-    if (savedAddrs) setSavedAddresses(JSON.parse(savedAddrs));
-    if (savedRewards) setCouponsAndRewards(JSON.parse(savedRewards));
-    if (savedPays) setSavedPayments(JSON.parse(savedPays));
-    if (savedRecent) setRecentlyViewed(JSON.parse(savedRecent));
-    if (savedToken) setAuthToken(savedToken);
-    if (savedAdmin) setIsAdmin(JSON.parse(savedAdmin));
-    if (savedLoggedIn) setIsLoggedIn(JSON.parse(savedLoggedIn));
-    if (savedOffers) setManualOffers(JSON.parse(savedOffers));
-  }, []);
 
   const saveCartToStorage = (newCart: CartItem[]) => {
     setCart(newCart);
@@ -705,7 +732,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const grandTotal = subtotal + gst + deliveryCharge;
 
     const newOrder: Order = {
-      id: 'OD' + Math.floor(100000 + Math.random() * 900000),
+      id: generateOrderId(),
       date: new Date().toISOString().split('T')[0],
       items: [...cart],
       subtotal,
@@ -765,7 +792,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const deleteAddress = (id: string) => {
     const toDelete = savedAddresses.find(a => a.id === id);
-    let updated = savedAddresses.filter(a => a.id !== id);
+    const updated = savedAddresses.filter(a => a.id !== id);
     if (toDelete?.isDefault && updated.length > 0) {
       updated[0].isDefault = true;
     }
@@ -831,35 +858,52 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const loginUserAction = (emailOrPhone: string, password: string): boolean => {
     if (!emailOrPhone || !password) return false;
-    
+
+    const normalized = emailOrPhone.trim().toLowerCase();
+    const normalizedPhone = normalized.replace(/\D/g, '');
+
+    // Use registered users list, but fall back to default seed if it's empty.
+    const usersToCheck = (registeredUsers && registeredUsers.length > 0) ? registeredUsers : defaultRegisteredUsers;
+
+    const matchedUser = usersToCheck.find((user) => {
+      const userEmail = user.email.trim().toLowerCase();
+      const userPhone = user.phone.replace(/\D/g, '');
+      return userEmail === normalized || userPhone === normalizedPhone;
+    });
+
+    if (!matchedUser || matchedUser.password !== password) {
+      // If we had no registered users but matched against default, ensure it's persisted for next attempts
+      if ((!registeredUsers || registeredUsers.length === 0) && usersToCheck === defaultRegisteredUsers) {
+        try {
+          saveRegisteredUsersToStorage(defaultRegisteredUsers);
+        } catch (err) {
+          // ignore
+        }
+      }
+      return false;
+    }
+
     setIsLoggedIn(true);
     localStorage.setItem('nexcart-logged-in', 'true');
-    // For local demo, if email is admin@nexcart.com, make them admin
-    const isAdminUser = emailOrPhone === 'admin@nexcart.com';
+
+    const isAdminUser = matchedUser.email.toLowerCase() === 'admin@nexcart.com';
     setIsAdmin(isAdminUser);
     localStorage.setItem('nexcart-admin', JSON.stringify(isAdminUser));
-    
-    const existingProfile = localStorage.getItem('nexcart-profile');
-    if (existingProfile) {
-      setUserProfile(JSON.parse(existingProfile));
-    } else {
-      const parts = emailOrPhone.split('@');
-      const mockName = parts[0] ? parts[0].charAt(0).toUpperCase() + parts[0].slice(1) : 'Admin User';
-      const updated = {
-        name: mockName,
-        email: emailOrPhone.includes('@') ? emailOrPhone : 'admin@nexcart.com',
-        phone: !emailOrPhone.includes('@') ? emailOrPhone : '+91 9876543210',
-        photo: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-        memberSince: 'Just now'
-      };
-      setUserProfile(updated);
-      localStorage.setItem('nexcart-profile', JSON.stringify(updated));
-    }
-    
+
+    const updatedProfile: UserProfile = {
+      name: matchedUser.name,
+      email: matchedUser.email,
+      phone: matchedUser.phone,
+      photo: matchedUser.photo,
+      memberSince: matchedUser.memberSince
+    };
+    setUserProfile(updatedProfile);
+    localStorage.setItem('nexcart-profile', JSON.stringify(updatedProfile));
+
     setSavedAddresses(defaultAddresses);
     setSavedPayments(defaultPayments);
     setCouponsAndRewards(defaultCouponsAndRewards);
-    
+
     return true;
   };
 
@@ -894,29 +938,52 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const registerUserAction = (name: string, phone: string, email: string, password: string): boolean => {
     if (!name || !phone || !email || !password) return false;
-    
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedPhone = phone.replace(/\D/g, '');
+
+    const existingUser = registeredUsers.find((user) => {
+      return user.email.trim().toLowerCase() === normalizedEmail || user.phone.replace(/\D/g, '') === normalizedPhone;
+    });
+
+    if (existingUser) {
+      return false;
+    }
+
+    const formattedPhone = phone.startsWith('+91') ? phone : '+91 ' + normalizedPhone;
+    const newUser: RegisteredUser = {
+      name,
+      email: normalizedEmail,
+      phone: formattedPhone,
+      password,
+      photo: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
+      memberSince: 'Just now',
+      isAdmin: normalizedEmail === 'admin@nexcart.com'
+    };
+
+    saveRegisteredUsersToStorage([newUser, ...registeredUsers]);
+
     setIsLoggedIn(true);
     localStorage.setItem('nexcart-logged-in', 'true');
-    
-    const isAdminUser = email === 'admin@nexcart.com';
+
+    const isAdminUser = newUser.isAdmin ?? false;
     setIsAdmin(isAdminUser);
     localStorage.setItem('nexcart-admin', JSON.stringify(isAdminUser));
-    
-    const updated = {
-      name,
-      email,
-      phone: phone.startsWith('+91') ? phone : '+91 ' + phone,
-      photo: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
-      memberSince: 'Just now'
+
+    const updatedProfile: UserProfile = {
+      name: newUser.name,
+      email: newUser.email,
+      phone: newUser.phone,
+      photo: newUser.photo,
+      memberSince: newUser.memberSince
     };
-    setUserProfile(updated);
-    localStorage.setItem('nexcart-profile', JSON.stringify(updated));
-    
+    setUserProfile(updatedProfile);
+    localStorage.setItem('nexcart-profile', JSON.stringify(updatedProfile));
+
     setSavedAddresses(defaultAddresses);
     setSavedPayments(defaultPayments);
     setCouponsAndRewards(defaultCouponsAndRewards);
-    
-    // Trigger Welcome Email Notification
+
     triggerWelcomeEmail(name, email);
 
     return true;

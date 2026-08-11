@@ -105,11 +105,15 @@ router.post('/welcome', async (req, res) => {
       html: htmlContent
     });
 
-    return res.json({
-      success: true,
-      message: 'Welcome email sent successfully',
-      previewUrl: result.previewUrl
-    });
+    if (result.success) {
+      return res.json({
+        success: true,
+        message: 'Welcome email sent successfully',
+        previewUrl: result.previewUrl
+      });
+    }
+
+    return res.status(500).json({ success: false, message: result.error });
   } catch (error) {
     console.error('Error in /api/email/welcome:', error);
     return res.status(500).json({ success: false, message: error.message });

@@ -1,19 +1,16 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useStore } from '../context/StoreContext';
+import { useIsClient } from '../hooks/useIsClient';
 import { useRouter } from 'next/navigation';
 import { FiX, FiTrash2, FiPlus, FiMinus, FiShoppingBag, FiTag, FiGift } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
 export default function CartDrawer() {
   const router = useRouter();
-  const [mounted, setMounted] = useState(false);
+  const mounted = useIsClient();
   const [couponInput, setCouponInput] = useState('');
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const {
     cart,

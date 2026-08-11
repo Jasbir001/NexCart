@@ -187,7 +187,7 @@ export default function CartPage() {
             <div className="space-y-1.5">
               <h3 className="font-bold text-lg">Your cart is empty</h3>
               <p className="text-sm text-zinc-400 max-w-xs mx-auto">
-                Looks like you haven't added any Indian premium items yet. Let's explore the collections!
+                Looks like you haven&apos;t added any Indian premium items yet. Let&apos;s explore the collections!
               </p>
             </div>
             <Link href="/" className="inline-block rounded-full bg-primary px-6 py-3 text-xs font-bold text-white shadow-md">

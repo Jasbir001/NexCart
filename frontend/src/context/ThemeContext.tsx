@@ -2,7 +2,6 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
-
 type Theme = 'light' | 'dark';
 
 interface ThemeContextType {
@@ -12,48 +11,40 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
+const defaultTheme: Theme = 'light';
+
+function getInitialTheme(): Theme {
+  if (typeof window === 'undefined') return defaultTheme;
+
+  const stored = localStorage.getItem('nexcart-theme') as Theme | null;
+  if (stored === 'light' || stored === 'dark') return stored;
+
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
+function applyThemeToDocument(theme: Theme) {
+  document.documentElement.classList.toggle('dark', theme === 'dark');
+}
+
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-
-  const [theme, setTheme] = useState<Theme>('light');
-
   const [mounted, setMounted] = useState(false);
+  const [theme, setTheme] = useState<Theme>(getInitialTheme);
 
   useEffect(() => {
-
-    const storedTheme = localStorage.getItem('nexcart-theme') as Theme | null;
-    
-    if (storedTheme) {
-    
-      setTheme(storedTheme);
-      if (storedTheme === 'dark') {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
-    } else {
-
-      const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      if (systemPrefersDark) {
-        setTheme('dark');
-        document.documentElement.classList.add('dark');
-      }
-    }
-
     setMounted(true);
   }, []);
 
+  useEffect(() => {
+    if (mounted) {
+      applyThemeToDocument(theme);
+    }
+  }, [theme, mounted]);
+
   const toggleTheme = () => {
     const nextTheme: Theme = theme === 'light' ? 'dark' : 'light';
-  
-    setTheme(nextTheme);
-
     localStorage.setItem('nexcart-theme', nextTheme);
-    
-    if (nextTheme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
+    setTheme(nextTheme);
+    applyThemeToDocument(nextTheme);
   };
 
   return (

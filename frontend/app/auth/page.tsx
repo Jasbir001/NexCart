@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, Suspense, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useStore } from '../../src/context/StoreContext';
 import { FiLock, FiMail, FiUser, FiPhone, FiEye, FiEyeOff } from 'react-icons/fi';
@@ -12,17 +12,7 @@ function AuthContent() {
   const router = useRouter();
   const { loginUserAction, registerUserAction, isLoggedIn } = useStore();
 
-  const [activeTab, setActiveTab] = useState<'login' | 'register'>('login');
-  
-  // URL parameters sync
-  useEffect(() => {
-    const tab = searchParams.get('tab');
-    if (tab === 'register') {
-      setActiveTab('register');
-    } else {
-      setActiveTab('login');
-    }
-  }, [searchParams]);
+  const activeTab: 'login' | 'register' = searchParams.get('tab') === 'register' ? 'register' : 'login';
 
   // Form Fields
   const [loginEmailOrPhone, setLoginEmailOrPhone] = useState('');
@@ -40,14 +30,14 @@ function AuthContent() {
   const [showRegConfirmPassword, setShowRegConfirmPassword] = useState(false);
 
   // Redirect handling
-  const handleRedirect = () => {
+  const handleRedirect = useCallback(() => {
     const redirectUrl = searchParams.get('redirect');
     if (redirectUrl && redirectUrl !== '/auth') {
       router.push(redirectUrl);
     } else {
       router.push('/account');
     }
-  };
+  }, [router, searchParams]);
 
   // If already logged in, redirect immediately
   useEffect(() => {
@@ -56,7 +46,7 @@ function AuthContent() {
     if (checkedLoggedIn) {
       handleRedirect();
     }
-  }, [isLoggedIn]);
+  }, [isLoggedIn, handleRedirect]);
 
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -136,7 +126,6 @@ function AuthContent() {
           <div className="flex border-b border-border/60 pb-1">
             <button
               onClick={() => {
-                setActiveTab('login');
                 router.replace('/auth?tab=login');
               }}
               className={`flex-1 pb-3 text-sm font-bold border-b-2 transition-all cursor-pointer ${
@@ -149,7 +138,6 @@ function AuthContent() {
             </button>
             <button
               onClick={() => {
-                setActiveTab('register');
                 router.replace('/auth?tab=register');
               }}
               className={`flex-1 pb-3 text-sm font-bold border-b-2 transition-all cursor-pointer ${

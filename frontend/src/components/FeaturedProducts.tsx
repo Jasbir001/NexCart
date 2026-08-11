@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useStore } from '../context/StoreContext';
+import React from 'react';
+import { useStore, Product } from '../context/StoreContext';
+import { useIsClient } from '../hooks/useIsClient';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { FiHeart, FiShoppingCart, FiStar, FiAlertCircle, FiXCircle } from 'react-icons/fi';
@@ -10,11 +11,7 @@ import toast, { Toaster } from 'react-hot-toast';
 export default function FeaturedProducts() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useIsClient();
   
   // 1. Get search query from URL query parameters
   const searchQuery = searchParams ? searchParams.get('search') || '' : '';
@@ -33,7 +30,7 @@ export default function FeaturedProducts() {
     );
   });
 
-  const handleAddToCart = (e: React.MouseEvent, product: any) => {
+  const handleAddToCart = (e: React.MouseEvent, product: Product) => {
     e.preventDefault(); // Prevent navigating to details page
     if (!isLoggedIn) {
       setAuthModalOpen(true);
@@ -43,7 +40,7 @@ export default function FeaturedProducts() {
     toast.success(`${product.name} added to cart!`, { icon: '🛒' });
   };
 
-  const handleToggleWishlist = (e: React.MouseEvent, product: any) => {
+  const handleToggleWishlist = (e: React.MouseEvent, product: Product) => {
     e.preventDefault();
     e.stopPropagation(); // Stop event bubbling to parent <Link>
     if (!isLoggedIn) {
@@ -89,7 +86,7 @@ export default function FeaturedProducts() {
             <div className="space-y-1.5">
               <h3 className="font-bold text-lg">No Products Found</h3>
               <p className="text-sm text-zinc-400 max-w-xs mx-auto">
-                We couldn't find any premium gear matching your search. Try adjusting spelling or using generic words.
+                We couldn&apos;t find any premium gear matching your search. Try adjusting spelling or using generic words.
               </p>
             </div>
             <button 

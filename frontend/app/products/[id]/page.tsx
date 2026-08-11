@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useStore, Product } from '../../../src/context/StoreContext';
+import { useIsClient } from '../../../src/hooks/useIsClient';
 import Link from 'next/link';
 import { 
   FiArrowLeft, 
@@ -26,11 +27,7 @@ import toast, { Toaster } from 'react-hot-toast';
 export default function ProductDetailsPage() {
   const params = useParams();
   const router = useRouter();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useIsClient();
   
   // 1. Get products and dynamic states from global StoreContext
   const { 
@@ -86,23 +83,24 @@ export default function ProductDetailsPage() {
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
   // 8. Frequently Bought Together (Bundle Checkout) state
-  const [bundleChecked, setBundleChecked] = useState<Record<number, boolean>>({});
+  const [bundleOverrides, setBundleOverrides] = useState<{ productId: number; values: Record<number, boolean> } | null>(null);
 
   // Related & Bundle Products logic (others in same category, max 2 for bundle)
   const bundleItems = product 
     ? products.filter(p => p.category === product.category && p.id !== product.id).slice(0, 2)
     : [];
 
-  // Initialize bundle states
-  useEffect(() => {
-    if (product && bundleItems.length > 0) {
-      const initial: Record<number, boolean> = { [product.id]: true };
-      bundleItems.forEach(item => {
-        initial[item.id] = true; // Default to checked
-      });
-      setBundleChecked(initial);
+  const bundleChecked = useMemo(() => {
+    if (!product || bundleItems.length === 0) return {} as Record<number, boolean>;
+    const base: Record<number, boolean> = { [product.id]: true };
+    bundleItems.forEach(item => {
+      base[item.id] = true;
+    });
+    if (bundleOverrides?.productId === product.id) {
+      return { ...base, ...bundleOverrides.values };
     }
-  }, [productId, product]);
+    return base;
+  }, [product, bundleItems, bundleOverrides]);
 
   if (!product) {
     return (
@@ -210,7 +208,13 @@ export default function ProductDetailsPage() {
   };
 
   const toggleBundleItem = (id: number) => {
-    setBundleChecked(prev => ({ ...prev, [id]: !prev[id] }));
+    setBundleOverrides(prev => {
+      const currentValues = prev?.productId === product.id ? prev.values : {};
+      return {
+        productId: product.id,
+        values: { ...currentValues, [id]: !(bundleChecked[id] ?? true) }
+      };
+    });
   };
 
   // Calculate prices
@@ -680,7 +684,7 @@ export default function ProductDetailsPage() {
                 <span>Sort by:</span>
                 <select 
                   value={reviewSort}
-                  onChange={(e) => setReviewSort(e.target.value as any)}
+                  onChange={(e) => setReviewSort(e.target.value as 'recent' | 'highest' | 'lowest')}
                   className="bg-transparent border-none outline-none text-text font-bold p-0.5"
                 >
                   <option value="recent">Most Recent</option>

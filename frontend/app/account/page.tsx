@@ -50,10 +50,11 @@ function AccountDashboardContent() {
     isLoggedIn
   } = useStore();
 
-  // Active tab state
-  const [activeTab, setActiveTab] = useState('profile');
-
-  // Guard routing: redirect to /auth if not logged in
+  const validTabs = ['profile', 'orders', 'addresses', 'coupons', 'payments', 'settings'] as const;
+  type AccountTab = typeof validTabs[number];
+  const tabParam = searchParams.get('tab');
+  const activeTab: AccountTab =
+    tabParam && validTabs.includes(tabParam as AccountTab) ? (tabParam as AccountTab) : 'profile';
   useEffect(() => {
     const savedLoggedIn = localStorage.getItem('nexcart-logged-in');
     const checkedLoggedIn = savedLoggedIn ? JSON.parse(savedLoggedIn) : false;
@@ -62,17 +63,8 @@ function AccountDashboardContent() {
     }
   }, [isLoggedIn, router]);
 
-  // Sync tab with URL search parameter
-  useEffect(() => {
-    const tab = searchParams.get('tab');
-    if (tab && ['profile', 'orders', 'addresses', 'coupons', 'payments', 'settings'].includes(tab)) {
-      setActiveTab(tab);
-    }
-  }, [searchParams]);
-
   // Handle tab change
-  const handleTabChange = (tabName: string) => {
-    setActiveTab(tabName);
+  const handleTabChange = (tabName: AccountTab) => {
     router.push(`/account?tab=${tabName}`);
   };
 
@@ -217,7 +209,7 @@ function AccountDashboardContent() {
   const deliveredOrdersCount = orders.filter(o => o.status === 'Delivered').length;
 
   // Sidebar Tabs Config
-  const tabsList = [
+  const tabsList: { id: AccountTab; label: string; icon: typeof FiUser }[] = [
     { id: 'profile', label: 'My Profile', icon: FiUser },
     { id: 'orders', label: 'My Orders', icon: FiShoppingBag },
     { id: 'addresses', label: 'Saved Addresses', icon: FiMapPin },
@@ -432,7 +424,7 @@ function AccountDashboardContent() {
                   {orders.length === 0 ? (
                     <div className="rounded-2xl border border-border bg-card p-8 text-center space-y-4 shadow-xs">
                       <FiShoppingBag className="text-4xl text-zinc-300 mx-auto" />
-                      <p className="text-xs font-semibold text-zinc-500">You haven't placed any orders yet.</p>
+                      <p className="text-xs font-semibold text-zinc-500">You haven&apos;t placed any orders yet.</p>
                       <Link href="/" className="rounded-full bg-primary/10 text-primary px-5 py-2 font-bold text-xs inline-block">
                         Go Shopping
                       </Link>
