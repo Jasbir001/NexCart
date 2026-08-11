@@ -166,8 +166,8 @@ function AuthContent() {
                   </span>
                   <input
                     type="text"
-                    name="emailOrPhone"
-                    autoComplete="username"
+                    name="emailOrPhone_noautofill"
+                    autoComplete="off"
                     required
                     placeholder="Enter email or 10-digit mobile"
                     value={loginEmailOrPhone}
@@ -192,6 +192,8 @@ function AuthContent() {
                   </span>
                   <input
                     type={showLoginPassword ? 'text' : 'password'}
+                    name="password_noautofill"
+                    autoComplete="new-password"
                     required
                     placeholder="••••••••"
                     value={loginPassword}

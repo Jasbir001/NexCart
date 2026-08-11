@@ -1,8 +1,9 @@
-'use client';
+ 'use client';
 
 import React, { useState } from 'react';
 import { useTheme } from '../context/ThemeContext';
 import { useStore } from '../context/StoreContext';
+import { useIsClient } from '../hooks/useIsClient';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { 
@@ -27,7 +28,8 @@ import toast from 'react-hot-toast';
 export default function Navbar() {
   const { theme, toggleTheme } = useTheme();
   const router = useRouter();
-  
+  const mounted = useIsClient();
+
   // 1. Get global cart and wishlist items from the Store Context
   const { cart, wishlist, setCartOpen, userProfile, logoutUser, isLoggedIn, isAdmin } = useStore();
   
@@ -38,10 +40,11 @@ export default function Navbar() {
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
 
   // 3. Dynamically compute the total quantity of items in the cart
-  const cartCount = cart.reduce((total, item) => total + item.quantity, 0);
-  
+  // Guard with `mounted` so server/client initial render stays consistent
+  const cartCount = mounted ? cart.reduce((total, item) => total + item.quantity, 0) : 0;
+
   // Wishlist count is simply the length of the wishlist array
-  const wishlistCount = wishlist.length;
+  const wishlistCount = mounted ? wishlist.length : 0;
 
   const categories = [
     'Electronics',
@@ -163,10 +166,10 @@ export default function Navbar() {
 
             {/* Account Profile Dropdown (Desktop only) */}
             <div className="relative hidden sm:block">
-              {!isLoggedIn ? (
+              {!mounted || !isLoggedIn ? (
                 // Guest Menu Button
                 <button
-                  onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+                    onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
                   className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all font-bold text-xs cursor-pointer border-none outline-none"
                 >
                   <FiUser />
@@ -179,12 +182,12 @@ export default function Navbar() {
                   onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
                   className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all font-bold text-xs cursor-pointer border-none outline-none"
                 >
-                  {userProfile.photo ? (
-                    <img src={userProfile.photo} alt={userProfile.name} className="h-5 w-5 rounded-full object-cover" />
-                  ) : (
-                    <FiUser />
-                  )}
-                  <span className="max-w-[80px] truncate">{userProfile.name.split(' ')[0]}</span>
+                    {mounted && userProfile.photo ? (
+                      <img src={userProfile.photo} alt={userProfile.name} className="h-5 w-5 rounded-full object-cover" />
+                    ) : (
+                      <FiUser />
+                    )}
+                    <span className="max-w-[80px] truncate">{mounted ? userProfile.name.split(' ')[0] : 'Account'}</span>
                   <FiChevronDown className={`transition-transform duration-200 ${isProfileDropdownOpen ? 'rotate-180' : ''}`} />
                 </button>
               )}

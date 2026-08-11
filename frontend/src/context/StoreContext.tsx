@@ -588,6 +588,12 @@ function readLocalStorage<T>(key: string, fallback: T): T {
   }
 }
 
+// Helper to create per-user storage keys. Uses guest when no email.
+function makeUserKey(base: string, email?: string) {
+  if (!email) return `${base}:guest`;
+  return `${base}:${encodeURIComponent(email.trim().toLowerCase())}`;
+}
+
 const generateOrderId = () => `OD${Math.floor(100000 + Math.random() * 900000)}`;
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
@@ -608,9 +614,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   // Account management states
   const [userProfile, setUserProfile] = useState<UserProfile>(() => readLocalStorage('nexcart-profile', defaultProfile));
-  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>(() => readLocalStorage('nexcart-addresses', defaultAddresses));
+  // Per-user storage: addresses and payments are stored per-user to avoid cross-user visibility
+  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>(() => readLocalStorage(makeUserKey('nexcart-addresses'), []));
   const [couponsAndRewards, setCouponsAndRewards] = useState<CouponsAndRewards>(() => readLocalStorage('nexcart-rewards', defaultCouponsAndRewards));
-  const [savedPayments, setSavedPayments] = useState<SavedPayment[]>(() => readLocalStorage('nexcart-payments', defaultPayments));
+  const [savedPayments, setSavedPayments] = useState<SavedPayment[]>(() => readLocalStorage(makeUserKey('nexcart-payments'), []));
   const [recentlyViewed, setRecentlyViewed] = useState<number[]>(() => readLocalStorage('nexcart-recent', []));
   const [registeredUsers, setRegisteredUsers] = useState<RegisteredUser[]>(() => readLocalStorage('nexcart-users', defaultRegisteredUsers));
 
@@ -778,7 +785,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
     updated.push(newAddr);
     setSavedAddresses(updated);
-    localStorage.setItem('nexcart-addresses', JSON.stringify(updated));
+    const key = makeUserKey('nexcart-addresses', userProfile?.email);
+    localStorage.setItem(key, JSON.stringify(updated));
   };
 
   const editAddress = (id: string, address: Omit<SavedAddress, 'id'>) => {
@@ -787,7 +795,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       updated = updated.map(a => a.id === id ? { ...a, isDefault: true } : { ...a, isDefault: false });
     }
     setSavedAddresses(updated);
-    localStorage.setItem('nexcart-addresses', JSON.stringify(updated));
+    const key = makeUserKey('nexcart-addresses', userProfile?.email);
+    localStorage.setItem(key, JSON.stringify(updated));
   };
 
   const deleteAddress = (id: string) => {
@@ -797,7 +806,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       updated[0].isDefault = true;
     }
     setSavedAddresses(updated);
-    localStorage.setItem('nexcart-addresses', JSON.stringify(updated));
+    const key = makeUserKey('nexcart-addresses', userProfile?.email);
+    localStorage.setItem(key, JSON.stringify(updated));
   };
 
   const setDefaultAddress = (id: string) => {
@@ -806,20 +816,23 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       isDefault: a.id === id
     }));
     setSavedAddresses(updated);
-    localStorage.setItem('nexcart-addresses', JSON.stringify(updated));
+    const key = makeUserKey('nexcart-addresses', userProfile?.email);
+    localStorage.setItem(key, JSON.stringify(updated));
   };
 
   const addSavedPayment = (payment: Omit<SavedPayment, 'id'>) => {
     const newPay = { ...payment, id: 'pay-' + Date.now() };
     const updated = [...savedPayments, newPay];
     setSavedPayments(updated);
-    localStorage.setItem('nexcart-payments', JSON.stringify(updated));
+    const key = makeUserKey('nexcart-payments', userProfile?.email);
+    localStorage.setItem(key, JSON.stringify(updated));
   };
 
   const deleteSavedPayment = (id: string) => {
     const updated = savedPayments.filter(p => p.id !== id);
     setSavedPayments(updated);
-    localStorage.setItem('nexcart-payments', JSON.stringify(updated));
+    const key = makeUserKey('nexcart-payments', userProfile?.email);
+    localStorage.setItem(key, JSON.stringify(updated));
   };
 
   const addRecentlyViewed = (productId: number) => {
@@ -900,8 +913,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setUserProfile(updatedProfile);
     localStorage.setItem('nexcart-profile', JSON.stringify(updatedProfile));
 
-    setSavedAddresses(defaultAddresses);
-    setSavedPayments(defaultPayments);
+    // Load per-user addresses/payments (if any) instead of global defaults
+    const userAddrKey = makeUserKey('nexcart-addresses', matchedUser.email);
+    const userPaysKey = makeUserKey('nexcart-payments', matchedUser.email);
+    setSavedAddresses(readLocalStorage(userAddrKey, []));
+    setSavedPayments(readLocalStorage(userPaysKey, []));
     setCouponsAndRewards(defaultCouponsAndRewards);
 
     return true;
@@ -980,8 +996,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setUserProfile(updatedProfile);
     localStorage.setItem('nexcart-profile', JSON.stringify(updatedProfile));
 
-    setSavedAddresses(defaultAddresses);
-    setSavedPayments(defaultPayments);
+    // New user: ensure per-user storage keys exist and load empty lists
+    const userAddrKey = makeUserKey('nexcart-addresses', newUser.email);
+    const userPaysKey = makeUserKey('nexcart-payments', newUser.email);
+    if (!localStorage.getItem(userAddrKey)) localStorage.setItem(userAddrKey, JSON.stringify([]));
+    if (!localStorage.getItem(userPaysKey)) localStorage.setItem(userPaysKey, JSON.stringify([]));
+    setSavedAddresses([]);
+    setSavedPayments([]);
     setCouponsAndRewards(defaultCouponsAndRewards);
 
     triggerWelcomeEmail(name, email);
