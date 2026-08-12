@@ -610,6 +610,11 @@ const readLastActivity = () => {
   return Number.isFinite(parsed) ? parsed : Date.now();
 };
 
+const markUserActivity = () => {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(LAST_ACTIVITY_KEY, String(Date.now()));
+};
+
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [products, setProducts] = useState<Product[]>(() => readLocalStorage('nexcart-products', indianProducts));
   const [cart, setCart] = useState<CartItem[]>(() => readLocalStorage('nexcart-cart', []));
