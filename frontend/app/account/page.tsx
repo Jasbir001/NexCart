@@ -47,14 +47,19 @@ function AccountDashboardContent() {
     wishlist,
     orders,
     logoutUser,
-    isLoggedIn
+    isLoggedIn,
+    isAdmin
   } = useStore();
 
+  const adminTabOptions = ['profile', 'coupons', 'settings'] as const;
   const customerTabOptions = ['profile', 'orders', 'addresses', 'coupons', 'payments', 'settings'] as const;
-  type AccountTab = typeof customerTabOptions[number];
+  type CustomerTab = typeof customerTabOptions[number];
+  type AdminTab = typeof adminTabOptions[number];
+  type AccountTab = CustomerTab | AdminTab;
+  const validTabOptions = isAdmin ? adminTabOptions : customerTabOptions;
   const tabParam = searchParams.get('tab');
   const activeTab: AccountTab =
-    tabParam && (customerTabOptions as readonly AccountTab[]).includes(tabParam as AccountTab)
+    tabParam && (validTabOptions as readonly AccountTab[]).includes(tabParam as AccountTab)
       ? (tabParam as AccountTab)
       : 'profile';
   useEffect(() => {
@@ -211,7 +216,7 @@ function AccountDashboardContent() {
   const deliveredOrdersCount = orders.filter(o => o.status === 'Delivered').length;
 
   // Sidebar Tabs Config
-  const tabsList: Array<{ id: AccountTab; label: string; icon: typeof FiUser }> = [
+  const customerTabItems: Array<{ id: AccountTab; label: string; icon: typeof FiUser }> = [
     { id: 'profile', label: 'My Profile', icon: FiUser },
     { id: 'orders', label: 'My Orders', icon: FiShoppingBag },
     { id: 'addresses', label: 'Saved Addresses', icon: FiMapPin },
@@ -219,6 +224,14 @@ function AccountDashboardContent() {
     { id: 'payments', label: 'Payment Options', icon: FiCreditCard },
     { id: 'settings', label: 'Settings', icon: FiSettings }
   ];
+
+  const adminTabItems: Array<{ id: AccountTab; label: string; icon: typeof FiUser }> = [
+    { id: 'profile', label: 'My Profile', icon: FiUser },
+    { id: 'coupons', label: 'Coupons & Rewards', icon: FiGift },
+    { id: 'settings', label: 'Settings', icon: FiSettings }
+  ];
+
+  const tabsList = isAdmin ? adminTabItems : customerTabItems;
 
   return (
     <div className="min-h-screen bg-background text-text py-12 transition-colors duration-200">
