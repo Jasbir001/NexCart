@@ -938,10 +938,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return true;
   };
 
+  const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+
   // Email Notification Helper Triggers (Nodemailer API)
   const triggerNotificationEmail = async (event: string, order: Order, recipientEmail?: string) => {
     try {
-      await fetch('http://localhost:5000/api/email/order-event', {
+      await fetch(`${apiBaseUrl}/api/email/order-event`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -957,7 +959,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const triggerWelcomeEmail = async (name: string, email: string) => {
     try {
-      await fetch('http://localhost:5000/api/email/welcome', {
+      await fetch(`${apiBaseUrl}/api/email/welcome`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email })
