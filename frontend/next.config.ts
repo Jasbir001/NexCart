@@ -5,9 +5,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/api/:path*',
-        destination: process.env.NEXT_PUBLIC_API_URL
-          ? `${process.env.NEXT_PUBLIC_API_URL}/api/:path*`
-          : 'http://localhost:5000/api/:path*',
+        destination: 'https://nexcart-tqt7.onrender.com/api/:path*',
       },
     ];
   },

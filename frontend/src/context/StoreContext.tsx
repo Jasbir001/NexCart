@@ -943,7 +943,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return true;
   };
 
-  const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+  const apiBaseUrl = 'https://nexcart-tqt7.onrender.com';
 
   // Email Notification Helper Triggers (Nodemailer API)
   const triggerNotificationEmail = async (event: string, order: Order, recipientEmail?: string) => {
