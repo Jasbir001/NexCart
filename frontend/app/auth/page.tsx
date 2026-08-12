@@ -90,12 +90,12 @@ function AuthContent() {
       return;
     }
 
-    const success = registerUserAction(regName, cleanPhone, regEmail, regPassword);
-    if (success) {
+    const result = registerUserAction(regName, cleanPhone, regEmail, regPassword);
+    if (result.success) {
       toast.success('Account created successfully! Welcome to NexCart.');
       handleRedirect();
     } else {
-      toast.error('Registration failed. Please check details and try again.');
+      toast.error(result.message || 'Registration failed. Please check details and try again.');
     }
   };
 

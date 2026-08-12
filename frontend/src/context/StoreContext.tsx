@@ -167,7 +167,7 @@ interface StoreContextType {
   isAuthModalOpen: boolean;
   setAuthModalOpen: (open: boolean) => void;
   loginUserAction: (emailOrPhone: string, password: string) => boolean;
-  registerUserAction: (name: string, phone: string, email: string, password: string) => boolean;
+  registerUserAction: (name: string, phone: string, email: string, password: string) => { success: boolean; message?: string };
   
   // Admin Features: Order status update, Product stock control, Manual Offer system
   updateOrderStatus: (orderId: string, status: Order['status']) => void;
@@ -974,8 +974,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const registerUserAction = (name: string, phone: string, email: string, password: string): boolean => {
-    if (!name || !phone || !email || !password) return false;
+  const registerUserAction = (name: string, phone: string, email: string, password: string): { success: boolean; message?: string } => {
+    if (!name || !phone || !email || !password) {
+      return { success: false, message: 'Sabhi fields bharne hain.' };
+    }
 
     const normalizedEmail = email.trim().toLowerCase();
     const normalizedPhone = phone.replace(/\D/g, '');
@@ -985,7 +987,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     });
 
     if (existingUser) {
-      return false;
+      const emailExists = existingUser.email.trim().toLowerCase() === normalizedEmail;
+      const phoneExists = existingUser.phone.replace(/\D/g, '') === normalizedPhone;
+      if (emailExists && phoneExists) {
+        return { success: false, message: 'Email aur mobile dono pahle se registered hain.' };
+      }
+      if (emailExists) {
+        return { success: false, message: 'Aapka email pahle se registered hai.' };
+      }
+      return { success: false, message: 'Aapka mobile number pahle se registered hai.' };
     }
 
     const formattedPhone = phone.startsWith('+91') ? phone : '+91 ' + normalizedPhone;
@@ -1030,7 +1040,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     triggerWelcomeEmail(name, email);
 
-    return true;
+    return { success: true };
   };
 
   const logoutUser = useCallback(() => {

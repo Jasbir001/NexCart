@@ -114,7 +114,7 @@ export default function AdminPage() {
   } = useStore();
 
   // Tab State
-  const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'offers'>('products');
+  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'orders' | 'offers'>('overview');
 
   // Route protection
   useEffect(() => {
@@ -152,6 +152,8 @@ export default function AdminPage() {
     'Accessories', 'Home & Decor', 'Sports & Fitness', 'Books & Stationery'
   ];
 
+  const allOrdersList = orders.length > 0 ? orders : DEMO_ORDERS;
+
   // Stats
   const totalProducts = products.length;
   const avgRating = products.length > 0
@@ -160,6 +162,11 @@ export default function AdminPage() {
   const lowStockCount = products.filter(p => p.stock > 0 && p.stock < 5).length;
   const outOfStockCount = products.filter(p => p.stock === 0).length;
   const totalReviews = products.reduce((acc, p) => acc + p.reviewsCount, 0);
+  const totalOrderCount = allOrdersList.length;
+  const pendingOrderCount = allOrdersList.filter(o => ['Pending', 'Confirmed', 'Packed'].includes(o.status)).length;
+  const shippedOrderCount = allOrdersList.filter(o => ['Shipped', 'Out For Delivery'].includes(o.status)).length;
+  const deliveredOrderCount = allOrdersList.filter(o => o.status === 'Delivered').length;
+  const activeOffersCount = manualOffers.filter(o => o.isActive).length;
 
   // Spec management
   const addSpecRow = () => setFormSpecs([...formSpecs, { key: '', value: '' }]);
@@ -248,7 +255,6 @@ export default function AdminPage() {
   // -------------------------------------------------------------
   const [orderStatusFilter, setOrderStatusFilter] = useState<string>('All');
 
-  const allOrdersList = orders.length > 0 ? orders : DEMO_ORDERS;
   const filteredOrders = orderStatusFilter === 'All'
     ? allOrdersList
     : allOrdersList.filter(o => o.status === orderStatusFilter);
@@ -356,6 +362,16 @@ export default function AdminPage() {
             {/* Navigation Tabs */}
             <div className="flex items-center bg-background rounded-2xl p-1 border border-border">
               <button
+                onClick={() => setActiveTab('overview')}
+                className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer border-none ${
+                  activeTab === 'overview'
+                    ? 'bg-primary text-white shadow-md'
+                    : 'text-zinc-400 hover:text-text'
+                }`}
+              >
+                <FiUsers className="text-sm" /> Overview
+              </button>
+              <button
                 onClick={() => setActiveTab('products')}
                 className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer border-none ${
                   activeTab === 'products'
@@ -373,7 +389,7 @@ export default function AdminPage() {
                     : 'text-zinc-400 hover:text-text'
                 }`}
               >
-                <FiTruck className="text-sm" /> Customer Orders ({allOrdersList.length})
+                <FiTruck className="text-sm" /> Customer Orders ({totalOrderCount})
               </button>
               <button
                 onClick={() => setActiveTab('offers')}
@@ -391,6 +407,86 @@ export default function AdminPage() {
       </div>
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+
+        {/* ========================================================= */}
+        {/* TAB 1: ADMIN OVERVIEW DASHBOARD */}
+        {/* ========================================================= */}
+        {activeTab === 'overview' && (
+          <div className="space-y-8">
+            <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm">
+              <div className="flex items-start justify-between gap-4 mb-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-text">Admin Overview</h2>
+                  <p className="text-sm text-zinc-500 mt-1">A quick summary of store health, orders to process, and active offers.</p>
+                </div>
+                <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-xs font-bold text-primary">
+                  <FiShield className="text-base" /> Admin Mode
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+                {[
+                  { label: 'Total Products', value: totalProducts, icon: <FiPackage />, color: 'text-primary' },
+                  { label: 'Total Orders', value: totalOrderCount, icon: <FiShoppingBag />, color: 'text-emerald-500' },
+                  { label: 'Active Offers', value: activeOffersCount, icon: <FiGift />, color: 'text-amber-500' },
+                  { label: 'Out of Stock', value: outOfStockCount, icon: <FiAlertTriangle />, color: 'text-red-500' }
+                ].map((stat) => (
+                  <div key={stat.label} className="rounded-3xl border border-border bg-background p-5 flex items-center gap-3">
+                    <div className={`text-2xl ${stat.color}`}>{stat.icon}</div>
+                    <div>
+                      <p className="text-3xl font-extrabold text-text">{stat.value}</p>
+                      <p className="text-[10px] uppercase tracking-[0.3em] text-zinc-400 font-bold">{stat.label}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                <div className="rounded-3xl border border-border bg-card p-5 space-y-4">
+                  <p className="text-xs uppercase tracking-[0.3em] text-zinc-400 font-bold">Order Pipeline</p>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between text-sm font-semibold text-text">
+                      <span>Pending / Processing</span>
+                      <span>{pendingOrderCount}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm font-semibold text-text">
+                      <span>Shipped / In Transit</span>
+                      <span>{shippedOrderCount}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm font-semibold text-text">
+                      <span>Delivered</span>
+                      <span>{deliveredOrderCount}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="rounded-3xl border border-border bg-card p-5 space-y-4">
+                  <p className="text-xs uppercase tracking-[0.3em] text-zinc-400 font-bold">Inventory Health</p>
+                  <div className="space-y-3">
+                    <div className="text-sm text-text font-semibold">Low stock products: <span className="font-bold text-primary">{lowStockCount}</span></div>
+                    <div className="text-sm text-text font-semibold">Avg rating across catalog: <span className="font-bold text-amber-500">{avgRating} ★</span></div>
+                  </div>
+                </div>
+                <div className="rounded-3xl border border-border bg-card p-5 space-y-4">
+                  <p className="text-xs uppercase tracking-[0.3em] text-zinc-400 font-bold">Quick Actions</p>
+                  <div className="grid gap-3">
+                    <button
+                      onClick={() => setActiveTab('products')}
+                      className="rounded-2xl bg-primary px-4 py-3 text-xs font-bold text-white hover:bg-primary/95 transition-all"
+                    >Manage Products</button>
+                    <button
+                      onClick={() => setActiveTab('orders')}
+                      className="rounded-2xl bg-background border border-border px-4 py-3 text-xs font-bold text-text hover:border-primary hover:text-primary transition-all"
+                    >Review Orders</button>
+                    <button
+                      onClick={() => setActiveTab('offers')}
+                      className="rounded-2xl bg-background border border-border px-4 py-3 text-xs font-bold text-text hover:border-primary hover:text-primary transition-all"
+                    >Edit Offers</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ========================================================= */}
         {/* TAB 1: PRODUCTS MANAGEMENT */}

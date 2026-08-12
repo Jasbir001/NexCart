@@ -50,11 +50,13 @@ function AccountDashboardContent() {
     isLoggedIn
   } = useStore();
 
-  const validTabs = ['profile', 'orders', 'addresses', 'coupons', 'payments', 'settings'] as const;
-  type AccountTab = typeof validTabs[number];
+  const customerTabOptions = ['profile', 'orders', 'addresses', 'coupons', 'payments', 'settings'] as const;
+  type AccountTab = typeof customerTabOptions[number];
   const tabParam = searchParams.get('tab');
   const activeTab: AccountTab =
-    tabParam && validTabs.includes(tabParam as AccountTab) ? (tabParam as AccountTab) : 'profile';
+    tabParam && (customerTabOptions as readonly AccountTab[]).includes(tabParam as AccountTab)
+      ? (tabParam as AccountTab)
+      : 'profile';
   useEffect(() => {
     const savedLoggedIn = localStorage.getItem('nexcart-logged-in');
     const checkedLoggedIn = savedLoggedIn ? JSON.parse(savedLoggedIn) : false;
@@ -209,7 +211,7 @@ function AccountDashboardContent() {
   const deliveredOrdersCount = orders.filter(o => o.status === 'Delivered').length;
 
   // Sidebar Tabs Config
-  const tabsList: { id: AccountTab; label: string; icon: typeof FiUser }[] = [
+  const tabsList: Array<{ id: AccountTab; label: string; icon: typeof FiUser }> = [
     { id: 'profile', label: 'My Profile', icon: FiUser },
     { id: 'orders', label: 'My Orders', icon: FiShoppingBag },
     { id: 'addresses', label: 'Saved Addresses', icon: FiMapPin },
