@@ -96,7 +96,10 @@ export default function CartDrawer() {
                 <p className="text-xs text-zinc-400 max-w-xs mt-1">Add items from our collections to start your creative lifestyle.</p>
               </div>
               <button
-                onClick={() => setCartOpen(false)}
+                onClick={() => {
+                  setCartOpen(false);
+                  router.push('/');
+                }}
                 className="rounded-full bg-primary/10 text-primary hover:bg-primary hover:text-white px-6 py-2.5 font-bold text-xs transition-all cursor-pointer"
               >
                 Start Shopping

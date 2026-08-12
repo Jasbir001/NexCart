@@ -35,10 +35,17 @@ ensureAdminExists();
 const app = express();
 
 // Middleware
-app.use(cors({
-  origin: ['http://localhost:3000'], // Next.js frontend port
-  credentials: true
-}));
+// Allow configuring allowed frontend origins via FRONTEND_ORIGIN env var (comma-separated)
+const frontendOrigins = process.env.FRONTEND_ORIGIN
+  ? process.env.FRONTEND_ORIGIN.split(',').map((u) => u.trim())
+  : ['http://localhost:3000']; // default for local dev
+
+app.use(
+  cors({
+    origin: frontendOrigins,
+    credentials: true,
+  })
+);
 
 // Body parser
 app.use(express.json());
