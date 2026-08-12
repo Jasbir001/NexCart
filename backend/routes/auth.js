@@ -9,7 +9,7 @@ const generateToken = (id) => {
   return jwt.sign(
     { id }, 
     process.env.JWT_SECRET || 'nexcart_secret_key_123456_change_me_in_production', 
-    { expiresIn: '30d' }
+    { expiresIn: '5m' }
   );
 };
 

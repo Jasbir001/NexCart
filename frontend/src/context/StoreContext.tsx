@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
 export interface Review {
   id: string;
@@ -595,6 +595,20 @@ function makeUserKey(base: string, email?: string) {
 }
 
 const generateOrderId = () => `OD${Math.floor(100000 + Math.random() * 900000)}`;
+const AUTO_LOGOUT_TIMEOUT_MS = 5 * 60 * 1000;
+const LAST_ACTIVITY_KEY = 'nexcart-last-activity';
+
+const hasSessionExpired = (lastActivityTs: number, nowTs = Date.now()) => {
+  return nowTs - lastActivityTs >= AUTO_LOGOUT_TIMEOUT_MS;
+};
+
+const readLastActivity = () => {
+  if (typeof window === 'undefined') return Date.now();
+  const saved = localStorage.getItem(LAST_ACTIVITY_KEY);
+  if (!saved) return Date.now();
+  const parsed = Number(saved);
+  return Number.isFinite(parsed) ? parsed : Date.now();
+};
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [products, setProducts] = useState<Product[]>(() => readLocalStorage('nexcart-products', indianProducts));
@@ -898,6 +912,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     setIsLoggedIn(true);
     localStorage.setItem('nexcart-logged-in', 'true');
+    localStorage.setItem(LAST_ACTIVITY_KEY, String(Date.now()));
 
     const isAdminUser = matchedUser.email.toLowerCase() === 'admin@nexcart.com';
     setIsAdmin(isAdminUser);
@@ -981,6 +996,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     setIsLoggedIn(true);
     localStorage.setItem('nexcart-logged-in', 'true');
+    localStorage.setItem(LAST_ACTIVITY_KEY, String(Date.now()));
 
     const isAdminUser = newUser.isAdmin ?? false;
     setIsAdmin(isAdminUser);
@@ -1010,13 +1026,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return true;
   };
 
-  const logoutUser = () => {
+  const logoutUser = useCallback(() => {
     setIsLoggedIn(false);
     setIsAdmin(false);
     setAuthToken(null);
     localStorage.setItem('nexcart-logged-in', 'false');
     localStorage.removeItem('nexcart-token');
     localStorage.removeItem('nexcart-admin');
+    localStorage.removeItem(LAST_ACTIVITY_KEY);
     
     setUserProfile({
       name: 'Guest User',
@@ -1039,7 +1056,39 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem('nexcart-payments');
     localStorage.removeItem('nexcart-rewards');
     localStorage.removeItem('nexcart-cart');
-  };
+  }, [clearCart]);
+
+  useEffect(() => {
+    if (!isLoggedIn) {
+      localStorage.removeItem(LAST_ACTIVITY_KEY);
+      return;
+    }
+
+    const checkForAutoLogout = () => {
+      if (hasSessionExpired(readLastActivity())) {
+        logoutUser();
+        return true;
+      }
+      return false;
+    };
+
+    if (checkForAutoLogout()) {
+      return;
+    }
+
+    markUserActivity();
+
+    const activityEvents = ['click', 'keydown', 'mousemove', 'scroll', 'touchstart', 'mousedown'];
+    const handleActivity = () => markUserActivity();
+
+    activityEvents.forEach((eventName) => window.addEventListener(eventName, handleActivity));
+    const sessionInterval = window.setInterval(checkForAutoLogout, 30_000);
+
+    return () => {
+      activityEvents.forEach((eventName) => window.removeEventListener(eventName, handleActivity));
+      window.clearInterval(sessionInterval);
+    };
+  }, [isLoggedIn, logoutUser]);
 
   // -------------------------------------------------------------
   // Admin Features: Order status update, Product stock control, Manual Offer System
