@@ -976,7 +976,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const registerUserAction = (name: string, phone: string, email: string, password: string): { success: boolean; message?: string } => {
     if (!name || !phone || !email || !password) {
-      return { success: false, message: 'Sabhi fields bharne hain.' };
+      return { success: false, message: 'Please fill in all fields.' };
     }
 
     const normalizedEmail = email.trim().toLowerCase();
@@ -990,12 +990,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       const emailExists = existingUser.email.trim().toLowerCase() === normalizedEmail;
       const phoneExists = existingUser.phone.replace(/\D/g, '') === normalizedPhone;
       if (emailExists && phoneExists) {
-        return { success: false, message: 'Email aur mobile dono pahle se registered hain.' };
+        return { success: false, message: 'Both email and mobile number are already registered.' };
       }
       if (emailExists) {
-        return { success: false, message: 'Aapka email pahle se registered hai.' };
+        return { success: false, message: 'This email is already registered.' };
       }
-      return { success: false, message: 'Aapka mobile number pahle se registered hai.' };
+      return { success: false, message: 'This mobile number is already registered.' };
     }
 
     const formattedPhone = phone.startsWith('+91') ? phone : '+91 ' + normalizedPhone;
