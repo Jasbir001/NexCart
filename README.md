@@ -180,9 +180,3 @@ Account, cart, wishlist, and order pages require authentication. Admin product a
 - `POST /api/email/order-event` - Send an order status email
 
 Protected API requests use a JWT bearer token in the `Authorization` header.
-
-## Notes
-
-- Product images in the seed data use external Unsplash URLs; an admin can upload local images through the upload API.
-- Orders and several customer preferences are currently maintained in browser local storage through the frontend store context.
-- Keep the backend `FRONTEND_ORIGIN` aligned with the URL where the frontend is running, especially when deploying.
