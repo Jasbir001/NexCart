@@ -1,4 +1,4 @@
-# NexCart
+ # NexCart
 
 NexCart is a full-stack e-commerce application with a responsive Next.js storefront and an Express/MongoDB API. It includes product discovery, authentication, cart and wishlist management, checkout/order tracking, reviews, email notifications, and an admin product workspace.
 
