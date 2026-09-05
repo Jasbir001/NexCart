@@ -115,6 +115,7 @@ export default function AdminPage() {
 
   // Tab State
   const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'orders' | 'offers'>('overview');
+  const [demoOrders, setDemoOrders] = useState<Order[]>(DEMO_ORDERS);
 
   // Route protection
   useEffect(() => {
@@ -152,7 +153,7 @@ export default function AdminPage() {
     'Accessories', 'Home & Decor', 'Sports & Fitness', 'Books & Stationery'
   ];
 
-  const allOrdersList = orders.length > 0 ? orders : DEMO_ORDERS;
+  const allOrdersList = orders.length > 0 ? orders : demoOrders;
 
   // Stats
   const totalProducts = products.length;
@@ -264,7 +265,15 @@ export default function AdminPage() {
   ];
 
   const handleStatusChange = (orderId: string, newStatus: Order['status']) => {
-    updateOrderStatus(orderId, newStatus);
+    if (orders.some(order => order.id === orderId)) {
+      updateOrderStatus(orderId, newStatus);
+    } else {
+      const updatedDemoOrders = demoOrders.map(order =>
+        order.id === orderId ? { ...order, status: newStatus } : order
+      );
+      setDemoOrders(updatedDemoOrders);
+      localStorage.setItem('nexcart-orders', JSON.stringify(updatedDemoOrders));
+    }
     toast.success(`Order #${orderId} status updated to "${newStatus}"!`);
   };
 
