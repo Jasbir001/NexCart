@@ -38,7 +38,10 @@ const app = express();
 // Allow configuring allowed frontend origins via FRONTEND_ORIGIN env var (comma-separated)
 const frontendOrigins = process.env.FRONTEND_ORIGIN
   ? process.env.FRONTEND_ORIGIN.split(',').map((u) => u.trim())
-  : ['http://localhost:3000']; // default for local dev
+  : [
+      'http://localhost:3000',
+      'https://nex-cart-git-main-jasbirnexbyte-95675-projects.vercel.app'
+    ];
 
 app.use(
   cors({
