@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { FiStar, FiShoppingCart, FiHeart } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
+
 export default function BestSellers() {
   const mounted = useIsClient();
 

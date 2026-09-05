@@ -44,7 +44,7 @@ export default function CartDrawer() {
     } else {
       toast.error('Invalid coupon code. Try NEXCART10 or WELCOME20.');
     }
-  };
+  };  
 
   const handleCheckout = () => {
     setCartOpen(false); // Close drawer
